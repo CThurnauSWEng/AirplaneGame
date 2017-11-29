@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<style type="text/css">
+		#ocean {
+			background-image: url("ocean.jpg");
+			height: 700px;
+			width: 900px;
+		}
+		.player {
+			background-image: url("player.png");
+			height: 70px;
+			width: 75px;
+			position: absolute;
+		}
+		.enemy {
+			background-image: url("enemy.png");
+			height: 75px;
+			width: 70px;
+			position: absolute;
+		}
+		.missile {
+			position: absolute;
+			background-color :black;
+			height: 10px;
+			width: 2px;
+		}
+
+	</style>
+	<div id="ocean">
+		<div id = "players"></div>
+		<div id = "enemy"></div>
+		<div id = "missiles"></div>
+	</div>
+
+
+	<script type="text/javascript">
+
+		var backgroundSize = {
+			height: 700,
+			width: 900
+		}
+
+		/* limitation - I had to hardcode the backgroundSize to match the height and width in style for the background */
+	
+		var player = {
+			left: backgroundSize.width/2 - 37,
+			top: backgroundSize.height-100,
+			alive: 1
+		}
+
+		var numberOfEnemies = 6;
+		var leftPosIncr = Math.round(backgroundSize.width/(2+numberOfEnemies));
+		var leftPos = 0;
+		var enemyDownIncr = 3;
+		var missileUpIncr = 3;
+		var missileLRIncr = 0;
+		var gameLoopIncr = 50;
+
+		/* there is a limitation here - I haven't figured out how to dynamically create an
+		enemy array size using the "numberOfEnemies" variable, so the followiing arrary has to be hard coded to contain the correct "numberOfEnemies" */
+
+		var enemies = [
+			{left: 0, top: 100, alive: 1},
+			{left: 0, top: 150, alive: 1},
+			{left: 0, top: 180, alive: 1},
+			{left: 0, top: 200, alive: 1},
+			{left: 0, top: 50, alive: 1},
+			{left: 0, top: 100, alive: 1},
+			];
+
+		var missiles = []
+
+		for (var i=0; i<enemies.length; i++) {
+			leftPos += leftPosIncr;
+			enemies[i].left = leftPos;
+		}
+
+		function drawPlayer(){
+			if (player.alive){
+				content = "<div class='player' style='left:"+player.left+"px; top:"+player.top+"px'></div>";
+				document.getElementById("players").innerHTML = content;
+			}
+		}
+
+		function drawMissiles(){
+			content = "";
+			for (var i = 0; i<missiles.length; i++){
+				if (missiles[i].alive){			
+					content += "<div class='missile' style='left:"+missiles[i].left+"px; top:"+missiles[i].top+"px'></div>";
+				}
+			}
+			document.getElementById("missiles").innerHTML = content;
+		}
+
+		function drawEnemies(){
+			content = "";
+			for (var i = 0; i<enemies.length; i++){
+				if (enemies[i].alive){
+					content += "<div class='enemy' style='left:"+enemies[i].left+"px; top:"+enemies[i].top+"px'></div>";
+				}
+			}
+			document.getElementById("enemy").innerHTML = content;
+		}
+
+		function moveEnemies(){
+			var deltaTop =0;
+			var deltaLeft = 0;
+			var content = "";
+			for (var i=0; i<enemies.length; i++){
+				if (enemies[i].alive){
+					enemies[i].top += enemyDownIncr;
+					if (enemies[i].top > backgroundSize.height*.8){
+						enemies[i].top = 100;
+					}
+					// check for collision with player
+					deltaTop = Math.abs(player.top - enemies[i].top)
+					deltaLeft = Math.abs(player.left - enemies[i].left)
+					if (deltaTop < 50 && deltaLeft < 50)
+					{
+						player.alive = 0;
+						enemies[i].alive = 0;
+						console.log("Collision!")
+						document.getElementById("players").innerHTML = content;
+					}
+				}
+			}
+		}
+
+		function moveMissiles(){
+			var deltaTop = 0;
+			var deltaLeft = 0;
+			for (var i=0; i<missiles.length; i++){
+				missiles[i].top -= missileUpIncr;
+				if (i % 2 ==1) {
+					missiles[i].left -= missileLRIncr;
+				}
+				else{
+					missiles[i].left += missileLRIncr;
+				}
+				if (missiles[i].top < 20){
+					missiles[i].alive = 0;
+				}
+			// Check for kill
+			for (var j=0; j<enemies.length; j++){
+				if (enemies[j].alive && missiles[i].alive){
+					deltaTop = Math.abs(missiles[i].top - enemies[j].top);
+					deltaLeft = Math.abs(missiles[i].left - (enemies[j].left+33));
+					if (deltaTop < 20 && deltaLeft < 10) {
+						enemies[j].alive = 0;
+						console.log("enemy ",j," killed")
+					}
+				}
+			}
+		}
+		}
+
+		document.onkeydown = function(e){
+			if(e.keyCode == 37 && player.left > 20) { // LEFT
+        		player.left -= 10;
+	        }
+        	else if (e.keyCode == 39 && player.left < backgroundSize.width-100) { // RIGHT
+        		player.left += 10;
+        	}
+        	else if (e.keyCode == 40 && player.top < backgroundSize.height-100) { // DOWN
+        		player.top += 10;
+        	}
+        	else if(e.keyCode == 38 && player.top > (backgroundSize.height*0.6)){ // UP
+        		player.top -= 10;
+			}
+        	else if(e.keyCode == 32 ){ // SPACE BAR - fire
+				missiles.push({left: (player.left+33), top: (player.top-8), alive: 1})
+        		drawMissiles();
+			}
+        	drawPlayer();
+ 
+		}
+
+		function gameLoop(){
+			setTimeout(gameLoop, gameLoopIncr)
+			drawPlayer();
+
+			moveMissiles();
+			drawMissiles();
+
+			moveEnemies();
+			drawEnemies();
+		}
+		gameLoop();
+
+
+	</script>
+</body>
+</html>
